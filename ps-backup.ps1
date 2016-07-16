@@ -14,10 +14,12 @@ AUTHOR
     peter@plind.net
 
 UPDATED
-    2016-Mar-06
+    2016-Jul-16
 
 CHANGE LOG
     2016-03-06    Created.
+    2016-07-16    Use robocopy /PURGE to delete files instead of 
+                  Remove-Item cmdlet for more reliable deletion.
 
 #>
 
@@ -38,16 +40,42 @@ CHANGE LOG
 
 # Do-DeleteBackup ---------------------------------------------------
 function Do-DeleteBackup{
+    $tempPath = $PSScriptRoot + "\temp"
     $deleteDate = Get-FormattedDate -type "d"
     $deletePath = $config.Configuration.BaseSettings.SaveBackupTo + "\$deleteDate\"
     
+    # Create new temp backup folder
+    if(Test-Path $tempPath){
+        Show-Message -type 1 -message "Temporary backup folder already exists."
+    } else {
+        try{
+            if($config.Configuration.BaseSettings.ScriptMode -eq "MakeChanges"){
+                New-Item $tempPath -ItemType Directory -ErrorAction Stop | Out-Null
+            } else {
+                New-Item $tempPath -ItemType Directory -ErrorAction Stop -WhatIf | Out-Null
+            }
+        } catch {
+            Show-Message -type 0 -message $($_.Exception.Message)
+        }
+    }
+
+    # Delete old backup using robocopy
     Show-Message -type 3 -message "Deleting folder $deletePath... "
     if(Test-Path $deletePath){
         try{
             if($config.Configuration.BaseSettings.ScriptMode -eq "MakeChanges"){
+                robocopy $tempPath $deletePath /PURGE /LOG+:$rLogPath
+                $summary += (Get-Content "$rLogPath")[-1 .. -7]
+                $summary + "`n" | Out-File -FilePath $logPath -Append
                 Remove-Item $deletePath -Recurse -ErrorAction SilentlyContinue
+                Remove-Item $tempPath -Recurse -ErrorAction SilentlyContinue
             } else {
+                Write-Host "What if: Performing the operation `"robocopy $tempPath $deletePath /PURGE /LOG+:$rLogPath`"`n"
+                robocopy $tempPath $deletePath /PURGE /L /LOG+:$rLogPath
+                $summary += (Get-Content "$rLogPath")[-1 .. -7]
+                $summary + "`n" | Out-File -FilePath $logPath -Append
                 Remove-Item $deletePath -Recurse -ErrorAction SilentlyContinue -WhatIf
+                Remove-Item $tempPath -Recurse -ErrorAction SilentlyContinue -WhatIf
             }
             Show-Message -type 2 -message "Deleted successfully."
         } catch {
@@ -97,12 +125,12 @@ function Do-Backup{
         if($config.Configuration.BaseSettings.ScriptMode -eq "MakeChanges"){
             robocopy $sourcePath $backupPath /MIR /XA:H /W:0 /R:0 /MT:64 /LOG+:$rLogPath
             $summary = (Get-Content "$rLogPath")[-1 .. -7]
-            $summary + "`n" | Out-File -FilePath $logPath -Append
+            $summary + "`n`n" | Out-File -FilePath $logPath -Append
         } else {
             Write-Host "What if: Performing the operation `"robocopy $sourcePath $backupPath /MIR /XA:H /W:0 /R:0 /MT:64 /LOG+:$rLogPath`"`n"
             robocopy $sourcePath $backupPath /MIR /XA:H /W:0 /R:0 /MT:64 /L /LOG+:$rLogPath
             $summary = (Get-Content "$rLogPath")[-1 .. -7]
-            $summary + "`n" | Out-File -FilePath $logPath -Append
+            $summary + "`n`n" | Out-File -FilePath $logPath -Append
         }
     } catch {
         Show-Message -type 0 -message $($_.Exception.Message)
@@ -152,14 +180,16 @@ function Send-ActivityReport{
     )
 
     process{
-        $smtpCreds = Import-Clixml "$PSScriptRoot\SMTPCreds.clixml"
+        if($config.Configuration.EmailSettings.SendMail -eq "true"){
+            $smtpCreds = Import-Clixml "$PSScriptRoot\SMTPCreds.clixml"
         
-        switch($n){
-            0{
-                Send-MailMessage -To $config.Configuration.EmailSettings.MailTo -from $config.Configuration.EmailSettings.MailFrom -subject $config.Configuration.EmailSettings.MailSubject -Body "Error(s) occurred during the backup process!  See attached log file for more information." -Attachments "$logPath" -Priority High -SmtpServer $config.Configuration.EmailSettings.SMTPServer -Port $config.Configuration.EmailSettings.SMTPPort -Credential $smtpCreds
-            }
-            1{
-                Send-MailMessage -To $config.Configuration.EmailSettings.MailTo -from $config.Configuration.EmailSettings.MailFrom -subject $config.Configuration.EmailSettings.MailSubject -Body "The backup process is complete.  See attached log file for more information." -Attachments "$logPath" -SmtpServer $config.Configuration.EmailSettings.SMTPServer -Port $config.Configuration.EmailSettings.SMTPPort -Credential $smtpCreds
+            switch($n){
+                0{
+                    Send-MailMessage -To $config.Configuration.EmailSettings.MailTo -from $config.Configuration.EmailSettings.MailFrom -subject $config.Configuration.EmailSettings.MailSubject -Body "Error(s) occurred during the backup process!  See attached log file for more information." -Attachments "$logPath" -Priority High -SmtpServer $config.Configuration.EmailSettings.SMTPServer -Port $config.Configuration.EmailSettings.SMTPPort -Credential $smtpCreds
+                }
+                1{
+                    Send-MailMessage -To $config.Configuration.EmailSettings.MailTo -from $config.Configuration.EmailSettings.MailFrom -subject $config.Configuration.EmailSettings.MailSubject -Body "The backup process is complete.  See attached log file for more information." -Attachments "$logPath" -SmtpServer $config.Configuration.EmailSettings.SMTPServer -Port $config.Configuration.EmailSettings.SMTPPort -Credential $smtpCreds
+                }
             }
         }
     }
@@ -211,13 +241,9 @@ function Show-Message{
 }
 
 
-#
 # Main program ------------------------------------------------------
-#
-
-
 Clear-Host
-Write-Host "CIFS Backup`n"
+Write-Host "ps-backup`n"
 
 # Get settings from config file
 try{
