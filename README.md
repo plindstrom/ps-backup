@@ -1,5 +1,5 @@
 # ps-backup
-ps-backup is a PowerShell script used to backup files using robocopy.  It also retains backups for a specified number of days and can send email alerts when the backup is complete.
+ps-backup is a PowerShell script used to backup files using Robocopy.  It also retains backups for a specified number of days and can send email alerts when the backup is complete.
 
 ## Requirements
 
@@ -23,7 +23,7 @@ Robocopy is used to perform the actual backup.  The following Robocopy options a
 - **/W:0** - Wait zero seconds between retries.
 - **/R:0** - Do not retry on failed copies.
 - **/MT:64** - Uses 64 threads.
-- **/L** - Only list files (used when running script in WhatIf mode. 
+- **/L** - Only list files (used when running script in WhatIf mode).
 - **/LOG+** - Appends all results to a log file.
 
 ## Creating Scheduled Task
@@ -86,6 +86,6 @@ Lastly, you agree that the author reserves the right to modify the Terms and Con
 
 ## License Agreement
 
-(c) 2016 Peter Lindstrom. This script is licensed under a Creative Commons Attribution-ShareAlike 4.0 International license.
+(c) 2016-2017 Peter Lindstrom. This script is licensed under a Creative Commons Attribution-ShareAlike 4.0 International license.
 
 http://creativecommons.org/licenses/by-sa/4.0/legalcode
