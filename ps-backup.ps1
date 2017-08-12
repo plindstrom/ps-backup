@@ -4,9 +4,9 @@ NAME
     ps-backup.ps1
 
 DESCRIPTION
-    This script will create a backup of a specified path and keep a 
+    This script will create a backup of a specified path and keep a
     specified number of backups.  This script is designed with the
-    expectation that it runs after midnight (all dates are 
+    expectation that it runs after midnight (all dates are
     subtracted by one to get the backup date).
 
 AUTHOR
@@ -14,12 +14,14 @@ AUTHOR
     peter@plind.net
 
 UPDATED
-    2016-Jul-16
+    2017-Aug-06
 
 CHANGE LOG
     2016-03-06    Created.
-    2016-07-16    Use robocopy /PURGE to delete files instead of 
+    2016-07-16    Use robocopy /PURGE to delete files instead of
                   Remove-Item cmdlet for more reliable deletion.
+    2017-08-06    Added logic to remove trailing \ from backup path
+                  if it is present.  Resolves bug #7.
 
 #>
 
@@ -42,8 +44,15 @@ CHANGE LOG
 function Do-DeleteBackup{
     $tempPath = $PSScriptRoot + "\temp"
     $deleteDate = Get-FormattedDate -type "d"
-    $deletePath = $config.Configuration.BaseSettings.SaveBackupTo + "\$deleteDate\"
-    
+
+    # Remove trailing \ from path if exists
+    $deletePath = $config.Configuration.BaseSettings.SaveBackupTo
+    if($deletePath.EndsWith("\")){
+      $deletePath = $deletePath.TrimEnd("\")
+    }
+
+    $deletePath = $deletePath + "\$deleteDate\"
+
     # Create new temp backup folder
     if(Test-Path $tempPath){
         Show-Message -type 1 -message "Temporary backup folder already exists."
@@ -91,9 +100,16 @@ function Do-DeleteBackup{
 # Do-Backup ---------------------------------------------------------
 function Do-Backup{
     $backupDate = Get-FormattedDate -type "s"
-    $backupPath = $config.Configuration.BaseSettings.SaveBackupTo + "\$backupDate\"
     $sourcePath = $config.Configuration.BaseSettings.PathToBackup + "\"
-    
+
+    # Remove trailing \ from path if exists
+    $backupPath = $config.Configuration.BaseSettings.SaveBackupTo
+    if($backupPath.EndsWith("\")){
+      $backupPath = $backupPath.TrimEnd("\")
+    }
+
+    $backupPath = $backupPath + "\$backupDate\"
+
     # Verify source path exists
     Show-Message -type 3 -message "Verifying $sourcePath exists... "
     if(Test-Path $sourcePath){
@@ -155,7 +171,7 @@ function Get-FormattedDate{
             "d"{ $curDate = $curDate.AddDays(-$config.Configuration.BaseSettings.DaysToKeep) }
             "s"{ $curDate = $curDate.AddDays(-1) }
         }
-        
+
         $year = $curDate.Year.ToString()
         $month = $curDate.Month.ToString()
         $day = $curDate.Day.ToString()
@@ -182,7 +198,7 @@ function Send-ActivityReport{
     process{
         if($config.Configuration.EmailSettings.SendMail -eq "true"){
             $smtpCreds = Import-Clixml "$PSScriptRoot\SMTPCreds.clixml"
-        
+
             switch($n){
                 0{
                     Send-MailMessage -To $config.Configuration.EmailSettings.MailTo -from $config.Configuration.EmailSettings.MailFrom -subject $config.Configuration.EmailSettings.MailSubject -Body "Error(s) occurred during the backup process!  See attached log file for more information." -Attachments "$logPath" -Priority High -SmtpServer $config.Configuration.EmailSettings.SMTPServer -Port $config.Configuration.EmailSettings.SMTPPort -Credential $smtpCreds
@@ -212,7 +228,7 @@ function Show-Message{
     process{
         $logDateTime = Get-Date
         $logDateTime = $logDateTime.ToString()
-        
+
         switch($n){
             0{
                 Write-Host "$m`n" -ForegroundColor Red
