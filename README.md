@@ -33,7 +33,7 @@ To run this script at a specified time and interval (every day at 2:00am, for ex
 When creating a new task, input the following settings.
 
 - Program/script: PowerShell
-- Add arguments: CIFSBackup.ps1
+- Add arguments: ps-backup.ps1
 - Start in: [pathToScript]
 
 **Note:**  This script was designed with the expectation that it runs after midnight (all dates are subtracted by one to get the user-friendly backup date). For example, if the script runs on March 20th, 2016 at 2:00am, the backup directory will be named '2016-03-19' to help users identify the appropriate backup.
