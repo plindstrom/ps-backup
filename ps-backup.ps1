@@ -20,7 +20,7 @@ CHANGE LOG
     2016-03-06    Created.
     2016-07-16    Use robocopy /PURGE to delete files instead of
                   Remove-Item cmdlet for more reliable deletion.
-    2017-08-06    Added logic to remove trailing \ from backup drive
+    2017-08-06    Added logic to remove trailing \ from backup path
                   if it is present.  Resolves bug #7.
 
 #>
@@ -44,7 +44,14 @@ CHANGE LOG
 function Do-DeleteBackup{
     $tempPath = $PSScriptRoot + "\temp"
     $deleteDate = Get-FormattedDate -type "d"
-    $deletePath = $config.Configuration.BaseSettings.SaveBackupTo + "\$deleteDate\"
+
+    # Remove trailing \ from path if exists
+    $deletePath = $config.Configuration.BaseSettings.SaveBackupTo
+    if($deletePath.EndsWith("\")){
+      $deletePath = $deletePath.TrimEnd("\")
+    }
+
+    $deletePath = $deletePath + "\$deleteDate\"
 
     # Create new temp backup folder
     if(Test-Path $tempPath){
@@ -95,7 +102,7 @@ function Do-Backup{
     $backupDate = Get-FormattedDate -type "s"
     $sourcePath = $config.Configuration.BaseSettings.PathToBackup + "\"
 
-    # Remove trailing \ from drive if exists
+    # Remove trailing \ from path if exists
     $backupPath = $config.Configuration.BaseSettings.SaveBackupTo
     if($backupPath.EndsWith("\")){
       $backupPath = $backupPath.TrimEnd("\")
