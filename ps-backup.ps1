@@ -96,12 +96,12 @@ function Do-Backup{
     $sourcePath = $config.Configuration.BaseSettings.PathToBackup + "\"
 
     # Remove trailing \ from drive if exists
-    $backupDriv = $config.Configuration.BaseSettings.SaveBackupTo
-    if($backupDriv.EndsWith("\")){
-      $backupDriv = $backupDriv.TrimEnd("\")
+    $backupPath = $config.Configuration.BaseSettings.SaveBackupTo
+    if($backupPath.EndsWith("\")){
+      $backupPath = $backupPath.TrimEnd("\")
     }
 
-    $backupPath = $backupDriv + "\$backupDate\"
+    $backupPath = $backupPath + "\$backupDate\"
 
     # Verify source path exists
     Show-Message -type 3 -message "Verifying $sourcePath exists... "
