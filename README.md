@@ -1,4 +1,9 @@
+:warning: **DEPRECATED** - Please note that this project is no longer maintained and will be removed.
+
+---
+
 # ps-backup
+
 ps-backup is a PowerShell script used to backup files using Robocopy.  It also retains backups for a specified number of days and can send email alerts when the backup is complete.
 
 ## Requirements
@@ -66,14 +71,6 @@ $cred = Get-Credential
 $cred | Export-CliXml SMTPCreds.clixml
 ```
 
-## Contact Information
-
-Please let me know if you have any suggestions or questions about this script.
-
-Web: http://www.plind.us
-
-Mail: peter@plind.net
-
 ## Terms and Conditions
 
 By downloading or using this script, or any information contained within the file(s) downloaded, (herein referred to as "the script") you agree to be bound by the following Terms and Conditions.
@@ -86,6 +83,6 @@ Lastly, you agree that the author reserves the right to modify the Terms and Con
 
 ## License Agreement
 
-(c) 2016-2017 Peter Lindstrom. This script is licensed under a Creative Commons Attribution-ShareAlike 4.0 International license.
+(c) 2016-2025 Peter Lindstrom. This script is licensed under a Creative Commons Attribution-ShareAlike 4.0 International license.
 
 http://creativecommons.org/licenses/by-sa/4.0/legalcode
